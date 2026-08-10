@@ -76,7 +76,6 @@ io.on('connection', (socket) => {
 
 // Database Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/campus-lost-found';
-
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
