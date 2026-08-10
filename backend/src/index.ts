@@ -75,7 +75,7 @@ io.on('connection', (socket) => {
 });
 
 // Database Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/campus-lost-found';
+const MONGODB_URI = process.env.MONGODB_URI || mongodb+srv://Manish:<Manish6201>@cluster0.kvzwi0r.mongodb.net/?appName=Cluster0;
 
 mongoose
   .connect(MONGODB_URI)
