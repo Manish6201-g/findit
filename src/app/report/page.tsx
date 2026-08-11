@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin } from 'lucide-react';
+import { MapPin, UploadCloud, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import Image from 'next/image';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -10,6 +11,8 @@ export default function ReportPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [imageError, setImageError] = useState<string>('');
   const [formData, setFormData] = useState({
     type: 'lost',
     name: '',
@@ -30,11 +33,43 @@ export default function ReportPage() {
     return null;
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError('');
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+
+    if (images.length + fileArray.length > 5) {
+      setImageError('You can upload a maximum of 5 images per item.');
+      return;
+    }
+
+    fileArray.forEach(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        setImageError('Each image must be under 5MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setImages(prev => [...prev, reader.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/items', formData);
+      await api.post('/items', { ...formData, images });
       router.push('/items');
     } catch {
       console.error('Failed to report item');
@@ -46,59 +81,71 @@ export default function ReportPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const categories = ['Electronics', 'Documents', 'Clothing', 'Books', 'Other'];
+  const categories = ['Electronics', 'Documents', 'Clothing', 'Books', 'Jewelry & Accessories', 'Other'];
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-        <div className="bg-blue-600 px-8 py-10 text-white">
-          <h1 className="text-3xl font-extrabold mb-2">Report Item</h1>
-          <p className="text-blue-100">Provide as much detail as possible to help the matching process.</p>
+      <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-8 py-10 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="relative z-10">
+            <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
+              <Sparkles size={14} className="text-yellow-300" />
+              <span>Smart Community Matching</span>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight mb-2">Report an Item</h1>
+            <p className="text-blue-100 text-sm max-w-lg">Provide key details and photos to help reconnect lost belongings quickly.</p>
+          </div>
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-4 p-1 bg-gray-100 rounded-2xl">
+          {/* Lost vs Found Switcher */}
+          <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/50">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'lost' })}
-              className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                formData.type === 'lost' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              className={`py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center space-x-2 ${
+                formData.type === 'lost' 
+                  ? 'bg-white text-blue-600 shadow-md shadow-blue-500/10 scale-[1.02]' 
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Lost Item
+              <span>Lost Something</span>
             </button>
             <button
               type="button"
               onClick={() => setFormData({ ...formData, type: 'found' })}
-              className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                formData.type === 'found' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              className={`py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center space-x-2 ${
+                formData.type === 'found' 
+                  ? 'bg-white text-emerald-600 shadow-md shadow-emerald-500/10 scale-[1.02]' 
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Found Item
+              <span>Found Something</span>
             </button>
           </div>
 
-          <div className="space-y-4">
+          {/* Form Controls */}
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Item Name</label>
-              <div className="relative">
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  placeholder="e.g. iPhone 13 Pro, Blue Wallet"
-                  className="w-full pl-4 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={handleChange}
-                />
-              </div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Item Title</label>
+              <input
+                name="name"
+                type="text"
+                required
+                placeholder="e.g. Blue Backpack, Apple AirPods, Student ID Card"
+                className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-800"
+                onChange={handleChange}
+              />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Category</label>
                 <select
                   name="category"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-800"
                   onChange={handleChange}
                   value={formData.category}
                 >
@@ -107,13 +154,14 @@ export default function ReportPage() {
                   ))}
                 </select>
               </div>
+
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Date</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Date</label>
                 <input
                   name="date"
                   type="date"
                   required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-800"
                   onChange={handleChange}
                   value={formData.date}
                 />
@@ -121,42 +169,94 @@ export default function ReportPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Location</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Campus Location</label>
               <div className="relative">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   name="location"
                   type="text"
                   required
-                  placeholder="Where was it lost/found?"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Science Library 2nd Floor, Main Cafeteria, Student Center"
+                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-800"
                   onChange={handleChange}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Detailed Description</label>
               <textarea
                 name="description"
                 required
                 rows={4}
-                placeholder="Describe the item's appearance, brand, color, or any unique marks..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Mention distinctive marks, color, brand, or unique features..."
+                className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-800"
                 onChange={handleChange}
               ></textarea>
             </div>
 
+            {/* Photo Upload Dropzone */}
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Item Photos (Recommended)</label>
+              <div className="border-2 border-dashed border-slate-200 hover:border-blue-500 bg-slate-50/50 hover:bg-blue-50/20 rounded-2xl p-6 transition-all text-center relative cursor-pointer">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  onChange={handleImageChange} 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-3">
+                    <UploadCloud size={24} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-800 mb-1">Click or drag photos to upload</p>
+                  <p className="text-xs text-slate-400">PNG, JPG, WEBP up to 5MB (Max 5 photos)</p>
+                </div>
+              </div>
+
+              {imageError && (
+                <p className="text-xs text-red-500 font-semibold mt-2">{imageError}</p>
+              )}
+
+              {/* Uploaded Thumbnails Preview */}
+              {images.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-4">
+                  {images.map((img, index) => (
+                    <div key={index} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                      <Image 
+                        src={img} 
+                        alt={`Upload preview ${index + 1}`} 
+                        fill 
+                        className="object-cover" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white p-1 rounded-full backdrop-blur-sm transition-all"
+                        aria-label="Remove photo"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {formData.type === 'lost' && (
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Reward (Optional)</label>
-                <input
-                  name="reward"
-                  type="number"
-                  placeholder="Amount in ₹"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={handleChange}
-                />
+                <label className="block text-sm font-bold text-slate-700 mb-2">Reward Offered (Optional)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                  <input
+                    name="reward"
+                    type="number"
+                    placeholder="e.g. 500"
+                    className="w-full pl-9 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-800"
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -164,9 +264,16 @@ export default function ReportPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-xl shadow-blue-500/25 flex items-center justify-center space-x-2 disabled:opacity-50"
           >
-            {loading ? 'Submitting...' : 'Post Report'}
+            {loading ? (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            ) : (
+              <>
+                <CheckCircle2 size={20} />
+                <span>Submit Report</span>
+              </>
+            )}
           </button>
         </form>
       </div>
