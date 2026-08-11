@@ -12,6 +12,9 @@ const router = express.Router();
 router.post('/', protect, createClaim);
 router.get('/', protect, getClaims);
 router.get('/:id', protect, getClaimById);
+router.put('/:id', protect, admin, updateClaimStatus);
+router.patch('/:id', protect, admin, updateClaimStatus);
 router.put('/:id/status', protect, admin, updateClaimStatus);
+router.patch('/:id/status', protect, admin, updateClaimStatus);
 
 export default router;

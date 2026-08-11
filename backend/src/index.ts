@@ -11,6 +11,7 @@ import itemRoutes from './routes/item.routes';
 import claimRoutes from './routes/claim.routes';
 import notificationRoutes from './routes/notification.routes';
 import chatRoutes from './routes/chat.routes';
+import messageRoutes from './routes/message.routes';
 import { errorHandler } from './middleware/error.middleware';
 import Message from './models/Message';
 
@@ -39,6 +40,7 @@ app.use('/api/items', itemRoutes);
 app.use('/api/claims', claimRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Campus Lost & Found API is running...');

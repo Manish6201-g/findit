@@ -20,6 +20,7 @@ export interface IItem extends Document {
   additionalNotes?: string;
   currentHolder?: string;
   canDeliver?: boolean;
+  qrCode?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +47,7 @@ const ItemSchema: Schema = new Schema(
     additionalNotes: { type: String },
     currentHolder: { type: String },
     canDeliver: { type: Boolean },
+    qrCode: { type: String },
   },
   { timestamps: true }
 );

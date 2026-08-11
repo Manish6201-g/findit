@@ -13,8 +13,8 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
     req.headers.authorization.startsWith('Bearer')
   ) {
     try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+      token = req.headers.authorization.split(' ')[1] || '';
+      const decoded = jwt.verify(token, (process.env.JWT_SECRET || 'secret') as jwt.Secret);
       req.user = decoded;
       next();
     } catch (error) {

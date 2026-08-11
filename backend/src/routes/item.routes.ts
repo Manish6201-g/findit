@@ -14,6 +14,7 @@ router.get('/', getItems);
 router.get('/:id', getItemById);
 router.post('/', protect, createItem);
 router.put('/:id', protect, updateItem);
+router.patch('/:id', protect, updateItem);
 router.delete('/:id', protect, deleteItem);
 
 export default router;

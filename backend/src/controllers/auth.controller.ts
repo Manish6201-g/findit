@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User';
 
 const generateToken = (id: string, role: string) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', {
+  return jwt.sign({ id, role }, (process.env.JWT_SECRET || 'secret') as jwt.Secret, {
     expiresIn: '30d',
   });
 };
@@ -42,7 +42,7 @@ export const registerUser = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id as string, user.role),
+        token: generateToken(String(user._id), user.role),
       });
     } else {
       return res.status(400).json({ message: 'Invalid user data provided' });
@@ -62,13 +62,13 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const user = await User.findOne({ email });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (user && (await bcrypt.compare(password, user.password || ''))) {
       return res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id as string, user.role),
+        token: generateToken(String(user._id), user.role),
       });
     } else {
       return res.status(401).json({ message: 'Invalid email or password' });

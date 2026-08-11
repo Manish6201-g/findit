@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import Item from '../models/Item';
+import { generateItemQrCode } from '../utils/qrCode';
+import { executeAiMatcher } from '../utils/aiMatcher';
 
 export const createItem = async (req: any, res: Response) => {
   try {
@@ -42,7 +44,19 @@ export const createItem = async (req: any, res: Response) => {
       canDeliver,
     });
 
-    return res.status(201).json(item);
+    // 1. Generate QR Code for the new item
+    const qrCode = await generateItemQrCode(item._id.toString(), item.name);
+    item.qrCode = qrCode;
+    await item.save();
+
+    // 2. Execute AI Matcher for matching opposite items
+    const matches = await executeAiMatcher(item);
+
+    return res.status(201).json({
+      item,
+      qrCode,
+      aiMatches: matches,
+    });
   } catch (error: any) {
     return res.status(500).json({ message: error.message || 'Failed to create item' });
   }
@@ -50,21 +64,28 @@ export const createItem = async (req: any, res: Response) => {
 
 export const getItems = async (req: Request, res: Response) => {
   try {
-    const { type, category, status, search } = req.query;
+    const { type, category, color, location, status, search, keyword, owner } = req.query;
     const query: any = {};
 
     if (type) query.type = type;
     if (category) query.category = category;
+    if (color) query.color = { $regex: String(color), $options: 'i' };
+    if (location) query.location = { $regex: String(location), $options: 'i' };
     if (status) query.status = status;
-    if (search) {
+    if (owner) query.owner = owner;
+
+    const searchTerm = (search || keyword) as string;
+    if (searchTerm) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { location: { $regex: search, $options: 'i' } },
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+        { location: { $regex: searchTerm, $options: 'i' } },
+        { brand: { $regex: searchTerm, $options: 'i' } },
+        { color: { $regex: searchTerm, $options: 'i' } },
       ];
     }
 
-    const items = await Item.find(query).sort({ createdAt: -1 }).populate('owner', 'name email');
+    const items = await Item.find(query).sort({ createdAt: -1 }).populate('owner', 'name email phone');
     return res.json(items);
   } catch (error: any) {
     return res.status(500).json({ message: error.message || 'Failed to fetch items' });
@@ -99,7 +120,7 @@ export const updateItem = async (req: any, res: Response) => {
 
     const updatedItem = await Item.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-    });
+    }).populate('owner', 'name email phone');
     return res.json(updatedItem);
   } catch (error: any) {
     return res.status(500).json({ message: error.message || 'Failed to update item' });
