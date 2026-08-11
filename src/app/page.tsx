@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Shield, Zap } from 'lucide-react';
+import { MapPin, Shield, Zap } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -19,7 +19,7 @@ export default function Home() {
               className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6"
             >
               Lost Something? <br />
-              <span className="text-blue-600">We'll Help You Find It.</span>
+              <span className="text-blue-600">We&apos;ll Help You Find It.</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}

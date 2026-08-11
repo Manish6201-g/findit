@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera, MapPin, Calendar, Tag, Info } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -20,10 +20,13 @@ export default function ReportPage() {
     reward: '',
   });
 
-  if (!user) {
-    if (typeof window !== 'undefined') {
+  useEffect(() => {
+    if (!user) {
       router.push('/login');
     }
+  }, [user, router]);
+
+  if (!user) {
     return null;
   }
 
@@ -33,7 +36,7 @@ export default function ReportPage() {
     try {
       await api.post('/items', formData);
       router.push('/items');
-    } catch (error) {
+    } catch {
       console.error('Failed to report item');
     }
     setLoading(false);

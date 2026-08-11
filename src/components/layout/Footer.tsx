@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { GitHub, Twitter, Instagram, Mail } from 'lucide-react';
+import { Mail, Globe, Share2 } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -43,10 +43,9 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-gray-900 mb-6">Connect With Us</h3>
             <div className="flex space-x-5 mb-6">
-              <a href="#" className="text-gray-400 hover:text-blue-600 transition-colors"><Github size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-blue-600 transition-colors"><Twitter size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-blue-600 transition-colors"><Instagram size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-blue-600 transition-colors"><Mail size={20} /></a>
+              <a href="#" aria-label="Website" className="text-gray-400 hover:text-blue-600 transition-colors"><Globe size={20} /></a>
+              <a href="#" aria-label="Share" className="text-gray-400 hover:text-blue-600 transition-colors"><Share2 size={20} /></a>
+              <a href="#" aria-label="Email" className="text-gray-400 hover:text-blue-600 transition-colors"><Mail size={20} /></a>
             </div>
             <p className="text-sm text-gray-500">
               Email: support@campusfound.com

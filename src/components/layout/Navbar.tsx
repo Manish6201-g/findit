@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, Bell, User, Menu, X, PlusCircle, LogOut } from 'lucide-react';
+import { Bell, User, Menu, X, PlusCircle, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 

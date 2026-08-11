@@ -6,12 +6,31 @@ import { MapPin, Calendar, Tag, User, MessageCircle, ShieldCheck, ArrowLeft } fr
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import Image from 'next/image';
+
+interface ItemDetail {
+  _id: string;
+  name: string;
+  description: string;
+  type: 'lost' | 'found';
+  category: string;
+  status: string;
+  location: string;
+  date: string;
+  images?: string[];
+  reward?: number;
+  owner: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+}
 
 export default function ItemDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [item, setItem] = useState<any>(null);
+  const [item, setItem] = useState<ItemDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [claimDescription, setClaimDescription] = useState('');
@@ -22,7 +41,7 @@ export default function ItemDetailPage() {
       try {
         const { data } = await api.get(`/items/${id}`);
         setItem(data);
-      } catch (error) {
+      } catch {
         console.error('Failed to fetch item');
       }
       setLoading(false);
@@ -41,7 +60,7 @@ export default function ItemDetailPage() {
       });
       alert('Claim submitted successfully!');
       setShowClaimForm(false);
-    } catch (error) {
+    } catch {
       alert('Failed to submit claim');
     }
     setSubmittingClaim(false);
@@ -64,7 +83,7 @@ export default function ItemDetailPage() {
           {/* Left: Image */}
           <div className="bg-gray-100 h-[400px] md:h-auto relative">
             {item.images?.[0] ? (
-              <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
+              <Image src={item.images[0]} alt={item.name} fill className="object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-300">
                 <Tag size={100} />

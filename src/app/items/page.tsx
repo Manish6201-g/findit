@@ -1,36 +1,69 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Tag, Filter } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, MapPin, Calendar, Tag } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
+import Image from 'next/image';
+
+interface Item {
+  _id: string;
+  name: string;
+  description: string;
+  type: 'lost' | 'found';
+  category: string;
+  location: string;
+  date: string;
+  images?: string[];
+  reward?: number;
+}
 
 export default function ItemsPage() {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [type, setType] = useState('');
   const [category, setCategory] = useState('');
 
-  useEffect(() => {
-    fetchItems();
-  }, [type, category]);
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.get('/items', {
         params: { search, type, category }
       });
       setItems(data);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch items');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [search, type, category]);
+
+  useEffect(() => {
+    let active = true;
+    const loadData = async () => {
+      try {
+        const { data } = await api.get('/items', {
+          params: { search, type, category }
+        });
+        if (active) {
+          setItems(data);
+          setLoading(false);
+        }
+      } catch {
+        if (active) {
+          console.error('Failed to fetch items');
+          setLoading(false);
+        }
+      }
+    };
+    loadData();
+    return () => { active = false; };
+  }, [search, type, category]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     fetchItems();
   };
 
@@ -94,7 +127,7 @@ export default function ItemsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {items.map((item: any) => (
+          {items.map((item: Item) => (
             <Link 
               key={item._id} 
               href={`/items/${item._id}`}
@@ -102,10 +135,11 @@ export default function ItemsPage() {
             >
               <div className="relative h-56 w-full bg-gray-100 overflow-hidden">
                 {item.images?.[0] ? (
-                  <img 
+                  <Image 
                     src={item.images[0]} 
                     alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">

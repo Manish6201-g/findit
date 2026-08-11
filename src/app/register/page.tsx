@@ -20,8 +20,9 @@ export default function RegisterPage() {
     setError('');
     try {
       await register(formData);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to register');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      setError(errorObj.response?.data?.message || 'Failed to register');
     }
   };
 

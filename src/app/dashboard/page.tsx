@@ -1,46 +1,92 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Tag, ShieldCheck, Bell, User, ExternalLink, Clock } from 'lucide-react';
+import { Tag, ShieldCheck, Bell, ExternalLink, Clock } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+
+interface DashboardItem {
+  _id: string;
+  name: string;
+  type: 'lost' | 'found';
+  status: string;
+  createdAt: string;
+  owner: { _id: string };
+}
+
+interface DashboardClaim {
+  _id: string;
+  status: string;
+  item: { _id: string; name: string };
+}
+
+interface DashboardNotification {
+  _id: string;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('items');
-  const [items, setItems] = useState([]);
-  const [claims, setClaims] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [items, setItems] = useState<DashboardItem[]>([]);
+  const [claims, setClaims] = useState<DashboardClaim[]>([]);
+  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    } else if (user) {
-      fetchData();
-    }
-  }, [user, authLoading]);
-
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = useCallback(async () => {
+    if (!user) return;
     try {
       const [itemsRes, claimsRes, notificationsRes] = await Promise.all([
         api.get('/items', { params: { owner: user._id } }),
         api.get('/claims'),
         api.get('/notifications'),
       ]);
-      // Filter items manually because the backend getItems might return all if owner param isn't handled yet
-      setItems(itemsRes.data.filter((item: any) => item.owner._id === user._id));
+      setItems(itemsRes.data.filter((item: DashboardItem) => item.owner._id === user._id));
       setClaims(claimsRes.data);
       setNotifications(notificationsRes.data);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch dashboard data');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    let active = true;
+    if (!authLoading && !user) {
+      router.push('/login');
+    } else if (user) {
+      const loadData = async () => {
+        try {
+          const [itemsRes, claimsRes, notificationsRes] = await Promise.all([
+            api.get('/items', { params: { owner: user._id } }),
+            api.get('/claims'),
+            api.get('/notifications'),
+          ]);
+          if (active) {
+            setItems(itemsRes.data.filter((item: DashboardItem) => item.owner._id === user._id));
+            setClaims(claimsRes.data);
+            setNotifications(notificationsRes.data);
+            setLoading(false);
+          }
+        } catch {
+          if (active) {
+            console.error('Failed to fetch dashboard data');
+            setLoading(false);
+          }
+        }
+      };
+      loadData();
+    }
+    return () => { active = false; };
+  }, [user, authLoading, router]);
 
   if (authLoading || loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
@@ -91,9 +137,9 @@ export default function DashboardPage() {
           {activeTab === 'items' && (
             <div className="space-y-4">
               {items.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">You haven't reported any items yet.</div>
+                <div className="text-center py-10 text-gray-500">You haven&apos;t reported any items yet.</div>
               ) : (
-                items.map((item: any) => (
+                items.map((item: DashboardItem) => (
                   <div key={item._id} className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-all">
                     <div className="flex items-center space-x-4">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -121,9 +167,9 @@ export default function DashboardPage() {
           {activeTab === 'claims' && (
             <div className="space-y-4">
               {claims.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">You haven't made any claims yet.</div>
+                <div className="text-center py-10 text-gray-500">You haven&apos;t made any claims yet.</div>
               ) : (
-                claims.map((claim: any) => (
+                claims.map((claim: DashboardClaim) => (
                   <div key={claim._id} className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-gray-100">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
@@ -153,7 +199,7 @@ export default function DashboardPage() {
               {notifications.length === 0 ? (
                 <div className="text-center py-10 text-gray-500">No new notifications.</div>
               ) : (
-                notifications.map((notif: any) => (
+                notifications.map((notif: DashboardNotification) => (
                   <div key={notif._id} className={`p-6 rounded-2xl border flex items-start space-x-4 ${notif.read ? 'bg-white border-gray-100' : 'bg-blue-50 border-blue-100'}`}>
                     <div className={`mt-1 p-2 rounded-lg ${notif.type === 'claim' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
                       <Bell size={16} />

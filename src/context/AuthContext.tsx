@@ -4,18 +4,27 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role?: string;
+  rollNumber?: string;
+  department?: string;
+}
+
 interface AuthContextType {
-  user: any;
+  user: User | null;
   loading: boolean;
-  login: (credentials: any) => Promise<void>;
-  register: (userData: any) => Promise<void>;
+  login: (credentials: Record<string, string>) => Promise<void>;
+  register: (userData: Record<string, string>) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -26,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const { data } = await api.get('/auth/profile');
           setUser(data);
-        } catch (error) {
+        } catch {
           localStorage.removeItem('token');
           setUser(null);
         }
@@ -36,14 +45,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadUser();
   }, []);
 
-  const login = async (credentials: any) => {
+  const login = async (credentials: Record<string, string>) => {
     const { data } = await api.post('/auth/login', credentials);
     localStorage.setItem('token', data.token);
     setUser(data);
     router.push('/');
   };
 
-  const register = async (userData: any) => {
+  const register = async (userData: Record<string, string>) => {
     const { data } = await api.post('/auth/register', userData);
     localStorage.setItem('token', data.token);
     setUser(data);
