@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, UploadCloud, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import { MapPin, UploadCloud, X, Sparkles, CheckCircle2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -13,6 +13,7 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string>('');
+  const [submitError, setSubmitError] = useState<string>('');
   const [formData, setFormData] = useState({
     type: 'lost',
     name: '',
@@ -46,16 +47,37 @@ export default function ReportPage() {
     }
 
     fileArray.forEach(file => {
-      if (file.size > 5 * 1024 * 1024) {
-        setImageError('Each image must be under 5MB.');
-        return;
-      }
-
       const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setImages(prev => [...prev, reader.result as string]);
-        }
+      reader.onload = (event) => {
+        const img = document.createElement('img');
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setImages(prev => [...prev, compressedDataUrl]);
+        };
       };
       reader.readAsDataURL(file);
     });
@@ -68,13 +90,20 @@ export default function ReportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSubmitError('');
     try {
       await api.post('/items', { ...formData, images });
       router.push('/items');
-    } catch {
-      console.error('Failed to report item');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      setSubmitError(
+        errorObj.response?.data?.message ||
+        errorObj.message ||
+        'Failed to post report. Please check your backend connection.'
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -100,6 +129,13 @@ export default function ReportPage() {
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center space-x-3 text-sm font-semibold">
+              <AlertTriangle className="shrink-0 text-red-500" size={20} />
+              <span>{submitError}</span>
+            </div>
+          )}
+
           {/* Lost vs Found Switcher */}
           <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/50">
             <button
@@ -211,7 +247,7 @@ export default function ReportPage() {
                     <UploadCloud size={24} />
                   </div>
                   <p className="text-sm font-bold text-slate-800 mb-1">Click or drag photos to upload</p>
-                  <p className="text-xs text-slate-400">PNG, JPG, WEBP up to 5MB (Max 5 photos)</p>
+                  <p className="text-xs text-slate-400">PNG, JPG, WEBP photos (Max 5 photos)</p>
                 </div>
               </div>
 
