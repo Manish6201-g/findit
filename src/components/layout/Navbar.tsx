@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Bell, User, Menu, X, PlusCircle, LogOut } from 'lucide-react';
+import { Bell, User, Menu, X, PlusCircle, LogOut, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 
@@ -42,6 +42,16 @@ const Navbar = () => {
 
           {/* Desktop Icons/CTA */}
           <div className="hidden md:flex items-center space-x-4">
+            {user?.role === 'admin' && (
+              <Link
+                href="/admin"
+                className="bg-slate-900 text-white px-3 py-1.5 rounded-full font-bold text-xs hover:bg-slate-800 transition-colors flex items-center space-x-1 border border-slate-700"
+              >
+                <ShieldCheck size={14} className="text-blue-400" />
+                <span>Admin Panel</span>
+              </Link>
+            )}
+
             <Link
               href="/report"
               className="bg-blue-600 text-white px-4 py-2 rounded-full font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -129,6 +139,16 @@ const Navbar = () => {
                 </Link>
                 {user ? (
                   <>
+                    {user?.role === 'admin' && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="bg-slate-900 text-white px-4 py-3 rounded-xl font-medium text-center flex items-center justify-center space-x-2"
+                      >
+                        <ShieldCheck size={18} className="text-blue-400" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    )}
                     <Link
                       href="/dashboard"
                       onClick={() => setIsOpen(false)}
