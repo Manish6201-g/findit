@@ -46,6 +46,13 @@ export default function ReportPage() {
       return;
     }
 
+    for (const file of fileArray) {
+      if (file.size > 1 * 1024 * 1024) {
+        setImageError(`File "${file.name}" exceeds 1MB limit. Please select images under 1MB.`);
+        return;
+      }
+    }
+
     fileArray.forEach(file => {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -53,8 +60,8 @@ export default function ReportPage() {
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 1200;
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
 
@@ -75,7 +82,7 @@ export default function ReportPage() {
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
 
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
           setImages(prev => [...prev, compressedDataUrl]);
         };
       };
@@ -99,7 +106,7 @@ export default function ReportPage() {
       setSubmitError(
         errorObj.response?.data?.message ||
         errorObj.message ||
-        'Failed to post report. Please check your backend connection.'
+        'Failed to post report. Please check your inputs or image sizes.'
       );
     } finally {
       setLoading(false);
@@ -247,7 +254,7 @@ export default function ReportPage() {
                     <UploadCloud size={24} />
                   </div>
                   <p className="text-sm font-bold text-slate-800 mb-1">Click or drag photos to upload</p>
-                  <p className="text-xs text-slate-400">PNG, JPG, WEBP photos (Max 5 photos)</p>
+                  <p className="text-xs text-slate-400">PNG, JPG, WEBP up to 1MB per image (Max 5 photos)</p>
                 </div>
               </div>
 
