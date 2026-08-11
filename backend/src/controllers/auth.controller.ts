@@ -10,80 +10,93 @@ const generateToken = (id: string, role: string) => {
 };
 
 export const registerUser = async (req: Request, res: Response) => {
-  const { name, email, password, rollNumber, department, year, phone } = req.body;
+  try {
+    const { name, email, password, rollNumber, department, year, phone } = req.body;
 
-  const userExists = await User.findOne({ email });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Please provide name, email and password' });
+    }
 
-  if (userExists) {
-    res.status(400);
-    throw new Error('User already exists');
-  }
+    const userExists = await User.findOne({ email });
 
-  // Note: Password hashing should ideally be a pre-save hook in the model, 
-  // but I'll add it here for now if the model doesn't have it.
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+    if (userExists) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    rollNumber,
-    department,
-    year,
-    phone,
-  });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-  if (user) {
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id as string, user.role),
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      rollNumber,
+      department,
+      year,
+      phone,
     });
-  } else {
-    res.status(400);
-    throw new Error('Invalid user data');
+
+    if (user) {
+      return res.status(201).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        token: generateToken(user._id as string, user.role),
+      });
+    } else {
+      return res.status(400).json({ message: 'Invalid user data provided' });
+    }
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || 'Server error during registration' });
   }
 };
 
 export const loginUser = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide email and password' });
+    }
 
-  // @ts-ignore - password is not in IUser interface yet but is in DB
-  if (user && (await bcrypt.compare(password, user.password))) {
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id as string, user.role),
-    });
-  } else {
-    res.status(401);
-    throw new Error('Invalid email or password');
+    const user = await User.findOne({ email });
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      return res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        token: generateToken(user._id as string, user.role),
+      });
+    } else {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || 'Server error during login' });
   }
 };
 
 export const getUserProfile = async (req: any, res: Response) => {
-  const user = await User.findById(req.user.id);
+  try {
+    const user = await User.findById(req.user.id);
 
-  if (user) {
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      rollNumber: user.rollNumber,
-      department: user.department,
-      year: user.year,
-      phone: user.phone,
-      role: user.role,
-    });
-  } else {
-    res.status(404);
-    throw new Error('User not found');
+    if (user) {
+      return res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        rollNumber: user.rollNumber,
+        department: user.department,
+        year: user.year,
+        phone: user.phone,
+        role: user.role,
+      });
+    } else {
+      return res.status(404).json({ message: 'User profile not found' });
+    }
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || 'Server error fetching profile' });
   }
 };
