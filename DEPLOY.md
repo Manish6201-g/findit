@@ -45,11 +45,11 @@ This guide provides step-by-step instructions for deploying the Campus Lost and 
 ---
 
 ## 4. Frontend Deployment (Vercel)
-1. Import your repository to Vercel.
-2. **Root Directory:** `frontend`
+1. Import your repository (`Manish6201-g/findit`) to Vercel.
+2. **Root Directory:** `./` (Leave default / Root of repository, do NOT set to `frontend`).
 3. **Framework Preset:** Next.js
 4. **Environment Variables:**
-   - `NEXT_PUBLIC_API_URL`: `https://your-backend.onrender.com/api` (Use the URL from Step 3).
+   - `NEXT_PUBLIC_API_URL`: `https://your-backend.onrender.com/api` (Use your deployed backend URL).
 5. Click **Deploy**.
 
 ---
