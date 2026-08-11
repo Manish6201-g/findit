@@ -21,8 +21,12 @@ export default function RegisterPage() {
     try {
       await register(formData);
     } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { message?: string } } };
-      setError(errorObj.response?.data?.message || 'Failed to register');
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(
+        errorObj.response?.data?.message ||
+        errorObj.message ||
+        'Registration failed. Please verify your internet and backend server connection.'
+      );
     }
   };
 
