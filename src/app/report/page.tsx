@@ -47,9 +47,9 @@ export default function ReportPage() {
     }
 
     for (const file of fileArray) {
-      if (file.size > 1 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        setImageError(`The photo "${file.name}" is ${sizeMB} MB. Maximum allowed size is 1 MB. Please compress or select an image under 1 MB.`);
+        setImageError(`The photo "${file.name}" is ${sizeMB} MB. Maximum allowed size is 5 MB. Please select an image under 5 MB.`);
         return;
       }
     }
@@ -61,8 +61,8 @@ export default function ReportPage() {
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
           let width = img.width;
           let height = img.height;
 
@@ -83,7 +83,7 @@ export default function ReportPage() {
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
 
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
           setImages(prev => [...prev, compressedDataUrl]);
         };
       };
@@ -257,16 +257,16 @@ export default function ReportPage() {
                     <UploadCloud size={24} />
                   </div>
                   <p className="text-sm font-bold text-slate-800 mb-1">Click or drag photos to upload</p>
-                  <p className="text-xs text-slate-400 font-medium">PNG, JPG, WEBP — <span className="font-bold text-amber-600">Max 1 MB per photo</span> (Up to 5 photos)</p>
+                  <p className="text-xs text-slate-400 font-medium">PNG, JPG, WEBP — <span className="font-bold text-blue-600">Max 5 MB per photo</span> (Up to 5 photos)</p>
                 </div>
               </div>
 
-              {/* Prominent High-Quality 1MB Warning Box */}
+              {/* High-Quality 5MB Warning Box */}
               {imageError && (
                 <div className="mt-3 p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-start space-x-3 text-amber-900 shadow-sm">
                   <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={20} />
                   <div>
-                    <h4 className="text-sm font-bold text-amber-900">Photo Exceeds 1 MB Limit</h4>
+                    <h4 className="text-sm font-bold text-amber-900">Photo Exceeds 5 MB Limit</h4>
                     <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">{imageError}</p>
                   </div>
                 </div>
