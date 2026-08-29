@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Calendar, Tag, User, ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { MapPin, Calendar, Tag, User, ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, Printer, Share2, Sparkles, X } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
@@ -19,6 +19,9 @@ interface ItemDetail {
   date: string;
   images?: string[];
   reward?: number;
+  color?: string;
+  brand?: string;
+  qrCode?: string;
   owner: {
     _id: string;
     name: string;
@@ -37,6 +40,10 @@ export default function ItemDetailPage() {
   const [claimDescription, setClaimDescription] = useState('');
   const [submittingClaim, setSubmittingClaim] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
+  
+  // Flyer Modal State
+  const [showFlyerModal, setShowFlyerModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -72,6 +79,18 @@ export default function ItemDetailPage() {
     setSubmittingClaim(false);
   };
 
+  const handlePrintFlyer = () => {
+    window.print();
+  };
+
+  const handleShareLink = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
   if (loading) return (
     <div className="flex justify-center items-center min-h-[60vh]">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -94,12 +113,35 @@ export default function ItemDetailPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <Link href="/items" className="inline-flex items-center text-sm font-bold text-slate-600 hover:text-blue-600 mb-8 transition-colors">
-        <ArrowLeft size={18} className="mr-2" />
-        Back to All Listings
-      </Link>
+      {/* Non-printable Navigation Bar */}
+      <div className="print:hidden flex items-center justify-between mb-8">
+        <Link href="/items" className="inline-flex items-center text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors">
+          <ArrowLeft size={18} className="mr-2" />
+          Back to All Listings
+        </Link>
 
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+        {/* Action Buttons: Print Flyer & Share */}
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleShareLink}
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 border border-slate-200 cursor-pointer"
+          >
+            <Share2 size={16} />
+            <span>{copiedLink ? 'Link Copied!' : 'Share Item'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowFlyerModal(true)}
+            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shadow-md shadow-slate-900/10 cursor-pointer"
+          >
+            <Printer size={16} className="text-yellow-400" />
+            <span>Print Lost Poster / Flyer</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Item Detail Card (Hidden during window.print()) */}
+      <div className="print:hidden bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Left: Image Gallery */}
           <div className="bg-slate-100 p-6 flex flex-col justify-between">
@@ -215,9 +257,138 @@ export default function ItemDetailPage() {
         </div>
       </div>
 
+      {/* FLYER POSTER MODAL (Non-printable container, triggers print) */}
+      {showFlyerModal && (
+        <div className="print:hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100 my-8">
+            <button
+              onClick={() => setShowFlyerModal(false)}
+              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-800 rounded-full hover:bg-slate-100"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Modal Title Bar */}
+            <div className="flex items-center space-x-2 text-blue-600 text-xs font-bold uppercase tracking-wider mb-2">
+              <Sparkles size={16} />
+              <span>Campus Poster Generator</span>
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 mb-6">Printable Lost Item Poster</h2>
+
+            {/* Poster Preview Frame */}
+            <div className="bg-white border-4 border-slate-900 p-6 rounded-2xl text-center space-y-4 mb-6 shadow-inner">
+              <div className="bg-red-600 text-white py-3 px-6 rounded-xl inline-block">
+                <h3 className="text-2xl font-black tracking-widest uppercase">
+                  {item.type === 'lost' ? '⚠️ LOST ITEM ALERT' : '📢 FOUND ITEM NOTICE'}
+                </h3>
+              </div>
+
+              {itemImages[0] ? (
+                <div className="relative h-48 w-full rounded-xl overflow-hidden border border-slate-200 mx-auto">
+                  <Image src={itemImages[0]} alt={item.name} fill className="object-cover" />
+                </div>
+              ) : null}
+
+              <h4 className="text-3xl font-black text-slate-900 tracking-tight">{item.name}</h4>
+              <p className="text-slate-700 text-sm font-semibold max-w-md mx-auto line-clamp-2">{item.description}</p>
+
+              <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700 bg-slate-100 p-3 rounded-xl text-left">
+                <div>📍 Location: <span className="font-normal">{item.location}</span></div>
+                <div>📅 Date: <span className="font-normal">{new Date(item.date).toLocaleDateString()}</span></div>
+                <div>🏷️ Category: <span className="font-normal">{item.category}</span></div>
+                <div>👤 Contact: <span className="font-normal">{item.owner.name}</span></div>
+              </div>
+
+              {item.reward && (
+                <div className="bg-amber-100 border border-amber-300 text-amber-900 py-2 px-4 rounded-xl font-black text-lg">
+                  🎁 REWARD OFFERED: ₹{item.reward}
+                </div>
+              )}
+
+              {/* QR Code Container */}
+              {item.qrCode ? (
+                <div className="pt-2 border-t border-slate-200">
+                  <Image src={item.qrCode} alt="Item QR Code" width={140} height={140} className="mx-auto" />
+                  <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">
+                    Scan with camera to report / claim on CampusFound
+                  </p>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Print Action Buttons */}
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowFlyerModal(false)}
+                className="flex-1 py-3.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all text-xs"
+              >
+                Close Preview
+              </button>
+              <button
+                onClick={handlePrintFlyer}
+                className="flex-1 bg-slate-900 text-white py-3.5 rounded-xl font-bold text-xs hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <Printer size={16} className="text-yellow-400" />
+                <span>Print Poster (A4 Flyer)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRINT-ONLY A4 FLYER LAYOUT (Rendered only when window.print() is executed) */}
+      <div className="hidden print:block fixed inset-0 bg-white p-8 text-center text-black">
+        <div className="border-8 border-black p-8 rounded-3xl h-full flex flex-col justify-between">
+          <div className="space-y-6">
+            <div className="bg-black text-white py-4 px-8 rounded-2xl inline-block">
+              <h1 className="text-4xl font-black uppercase tracking-widest">
+                {item.type === 'lost' ? '⚠️ LOST ITEM ALERT' : '📢 FOUND ITEM NOTICE'}
+              </h1>
+            </div>
+
+            <h2 className="text-5xl font-black tracking-tight">{item.name}</h2>
+            
+            {itemImages[0] && (
+              <div className="relative h-72 w-full rounded-2xl overflow-hidden border-2 border-black mx-auto">
+                <Image src={itemImages[0]} alt={item.name} fill className="object-cover" />
+              </div>
+            )}
+
+            <p className="text-xl font-medium text-gray-900 max-w-2xl mx-auto leading-relaxed">{item.description}</p>
+
+            <div className="grid grid-cols-2 gap-4 text-left text-base font-bold bg-gray-100 p-6 rounded-2xl border border-gray-300">
+              <div>📍 Location: <span className="font-normal">{item.location}</span></div>
+              <div>📅 Date: <span className="font-normal">{new Date(item.date).toLocaleDateString()}</span></div>
+              <div>🏷️ Category: <span className="font-normal">{item.category}</span></div>
+              <div>👤 Contact: <span className="font-normal">{item.owner.name} ({item.owner.email})</span></div>
+            </div>
+
+            {item.reward && (
+              <div className="bg-yellow-300 text-black py-4 px-8 rounded-2xl font-black text-3xl border-2 border-black">
+                🎁 REWARD OFFERED: ₹{item.reward}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-6 border-t-2 border-black flex items-center justify-between">
+            <div className="text-left">
+              <h3 className="text-2xl font-black">CampusFound Platform</h3>
+              <p className="text-sm font-semibold text-gray-700">Official Campus Lost & Found Network</p>
+            </div>
+
+            {item.qrCode && (
+              <div className="text-center">
+                <Image src={item.qrCode} alt="Item QR Code" width={150} height={150} className="mx-auto" />
+                <span className="text-xs font-bold">SCAN TO CLAIM</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Claim Modal */}
       {showClaimForm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-md">
+        <div className="print:hidden fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-md">
           <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-100">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
               <h2 className="text-2xl font-bold tracking-tight">Submit Ownership Claim</h2>
