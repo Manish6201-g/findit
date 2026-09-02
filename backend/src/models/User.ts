@@ -10,6 +10,8 @@ export interface IUser extends Document {
   phone?: string;
   profilePicture?: string;
   role: 'user' | 'admin';
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +27,8 @@ const UserSchema: Schema = new Schema(
     phone: { type: String },
     profilePicture: { type: String },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    resetPasswordToken: { type: String },
+    resetPasswordExpire: { type: Date },
   },
   { timestamps: true }
 );
